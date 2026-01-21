@@ -61,11 +61,11 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <input type="number" name="min_price" class="form-control" placeholder="Min Price" 
+                    <input type="number" name="min_price" class="form-control" placeholder="Min Price"
                            value="{{ request('min_price') }}">
                 </div>
                 <div class="col-md-2">
-                    <input type="number" name="max_price" class="form-control" placeholder="Max Price" 
+                    <input type="number" name="max_price" class="form-control" placeholder="Max Price"
                            value="{{ request('max_price') }}">
                 </div>
                 <div class="col-md-1">
@@ -101,73 +101,112 @@
         </div>
     </div>
 
-    <!-- Units Table -->
+    <!-- Units Cards Grid -->
     @if($units->count() > 0)
-        <div class="card">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th width="40">
-                                <input type="checkbox" class="form-check-input" id="select-all" onchange="toggleSelectAll()">
-                            </th>
-                            <th>Unit</th>
-                            <th>Building</th>
-                            <th>Type</th>
-                            <th>Size</th>
-                            <th>Rent</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($units as $unit)
-                            <tr>
-                                <td>
-                                    <input type="checkbox" class="form-check-input unit-checkbox" 
-                                           value="{{ $unit->id }}" onchange="updateSelection()">
-                                </td>
-                                <td>
-                                    <div class="fw-semibold">#{{ $unit->unit_number }}</div>
-                                    @if($unit->floor)
-                                        <small class="text-muted">Floor {{ $unit->floor->floor_number }}</small>
-                                    @endif
-                                </td>
-                                <td>{{ $unit->building->name }}</td>
-                                <td class="text-capitalize">{{ $unit->unit_type }}</td>
-                                <td>{{ number_format($unit->size_sqft) }} sqft</td>
-                                <td class="fw-semibold">${{ number_format($unit->rent_amount, 2) }}</td>
-                                <td>
-                                    <span class="badge status-{{ $unit->status }}">
-                                        {{ ucfirst($unit->status) }}
+        <div class="row g-4">
+            @foreach($units as $unit)
+                <div class="col-md-6 col-lg-4 col-xl-3">
+                    <div class="card unit-card h-100" onclick="openEditModal({{ $unit->id }})" style="cursor: pointer;">
+                        <!-- Unit Image -->
+                        <div class="unit-image-container" style="height: 200px; overflow: hidden; background: #f8f9fa;">
+                            @if($unit->image)
+                                <img src="{{ Storage::url($unit->image) }}" alt="Unit {{ $unit->unit_number }}"
+                                     class="card-img-top" style="height: 100%; width: 100%; object-fit: cover;">
+                            @else
+                                <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                                    <i class="bi bi-house-door fs-1 text-muted"></i>
+                                </div>
+                            @endif
+                            <!-- Status Badge -->
+                            <div class="position-absolute top-0 end-0 m-2">
+                                <span class="badge status-{{ $unit->status }}">
+                                    {{ ucfirst($unit->status) }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <!-- Unit Number & Building -->
+                            <h5 class="card-title mb-1">
+                                <i class="bi bi-door-closed me-1 text-primary"></i>
+                                Unit {{ $unit->unit_number }}
+                            </h5>
+                            <p class="text-muted small mb-2">
+                                <i class="bi bi-building me-1"></i>
+                                {{ $unit->building->name }}
+                            </p>
+
+                            <!-- Floor Info -->
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-layers me-1"></i>
+                                    Floor {{ $unit->floor->floor_number ?? 'N/A' }}
+                                </small>
+                            </div>
+
+                            <!-- Unit Type -->
+                            <div class="mb-2">
+                                <span class="badge bg-secondary text-capitalize">
+                                    {{ $unit->unit_type }}
+                                </span>
+                            </div>
+
+                            <!-- Details Grid -->
+                            <div class="row g-2 mb-2 small">
+                                <div class="col-6">
+                                    <i class="bi bi-rulers me-1 text-muted"></i>
+                                    <strong>{{ number_format($unit->size_sqft) }}</strong> sqft
+                                </div>
+                                <div class="col-6">
+                                    <i class="bi bi-bed me-1 text-muted"></i>
+                                    <strong>{{ $unit->bedrooms ?? 0 }}</strong> Beds
+                                </div>
+                                <div class="col-6">
+                                    <i class="bi bi-droplet me-1 text-muted"></i>
+                                    <strong>{{ $unit->bathrooms ?? 0 }}</strong> Baths
+                                </div>
+                                <div class="col-6">
+                                    <i class="bi bi-p-square me-1 text-muted"></i>
+                                    <strong>{{ $unit->parking_spaces ?? 0 }}</strong> Parking
+                                </div>
+                            </div>
+
+                            <!-- Rent Amount -->
+                            <div class="border-top pt-2 mt-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-muted small">Rent:</span>
+                                    <span class="fw-bold text-success fs-5">
+                                        ${{ number_format($unit->rent_amount, 0) }}
+                                        <small class="text-muted fs-6">/mo</small>
                                     </span>
-                                </td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <a href="{{ route('real-estate.units.show', $unit) }}" 
-                                           class="btn btn-outline-primary" title="View">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        <a href="{{ route('real-estate.units.edit', $unit) }}" 
-                                           class="btn btn-outline-secondary" title="Edit">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <form action="{{ route('real-estate.units.destroy', $unit) }}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-outline-danger" 
-                                                    title="Delete"
-                                                    onclick="return confirm('Delete this unit?')">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+                                </div>
+                            </div>
+
+                            <!-- View Type -->
+                            @if($unit->view)
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="bi bi-eye me-1"></i>
+                                        {{ $unit->view }}
+                                    </small>
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="card-footer bg-white border-top-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    {{ $unit->created_at->format('M d, Y') }}
+                                </small>
+                                <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); openEditModal({{ $unit->id }})">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
         </div>
 
         <div class="mt-4">
@@ -189,8 +228,121 @@
     @endif
 </div>
 
+<!-- Edit Unit Modal -->
+<div class="modal fade" id="editUnitModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil-square me-2"></i>
+                    Edit Unit <span id="modal-unit-number"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modal-content">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
+    function openEditModal(unitId) {
+        const modal = new bootstrap.Modal(document.getElementById('editUnitModal'));
+        const modalContent = document.getElementById('modal-content');
+
+        // Show loading
+        modalContent.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        `;
+
+        modal.show();
+
+        // Load edit form via AJAX
+        fetch(`/real-estate/units/${unitId}/edit`)
+            .then(response => response.text())
+            .then(html => {
+                // Extract form content from the response
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const form = doc.querySelector('form');
+
+                if (form) {
+                    // Update modal content with form
+                    modalContent.innerHTML = form.outerHTML;
+
+                    // Update form action to handle modal submission
+                    const modalForm = modalContent.querySelector('form');
+                    modalForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        submitModalForm(modalForm, unitId);
+                    });
+
+                    // Update unit number in modal title
+                    const unitNumber = doc.querySelector('[name="unit_number"]')?.value || unitId;
+                    document.getElementById('modal-unit-number').textContent = `#${unitNumber}`;
+                } else {
+                    modalContent.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Failed to load unit details.
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                modalContent.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error loading unit: ${error.message}
+                    </div>
+                `;
+            });
+    }
+
+    function submitModalForm(form, unitId) {
+        const formData = new FormData(form);
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Success - reload page to show updated data
+                window.location.reload();
+            } else {
+                return response.json().then(data => {
+                    throw new Error(data.message || 'Failed to update unit');
+                });
+            }
+        })
+        .catch(error => {
+            // Show error
+            alert('Error: ' + error.message);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        });
+    }
+
     function toggleSelectAll() {
         const selectAll = document.getElementById('select-all');
         const checkboxes = document.querySelectorAll('.unit-checkbox');
@@ -202,10 +354,10 @@
         const checkboxes = document.querySelectorAll('.unit-checkbox:checked');
         const selectedIds = Array.from(checkboxes).map(cb => cb.value);
         const count = selectedIds.length;
-        
+
         document.querySelector('.selected-count').textContent = count;
         document.getElementById('selected-unit-ids').value = JSON.stringify(selectedIds);
-        
+
         const bulkBar = document.querySelector('.bulk-actions-bar');
         if (count > 0) {
             bulkBar.style.display = 'block';
@@ -221,6 +373,48 @@
         updateSelection();
     }
 </script>
+
+<style>
+    .unit-card {
+        transition: all 0.3s ease;
+        border: 1px solid #dee2e6;
+    }
+
+    .unit-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-color: #0d6efd;
+    }
+
+    .unit-image-container {
+        position: relative;
+    }
+
+    .status-available {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .status-reserved {
+        background-color: #ffc107;
+        color: #000;
+    }
+
+    .status-rented {
+        background-color: #17a2b8;
+        color: white;
+    }
+
+    .status-maintenance {
+        background-color: #fd7e14;
+        color: white;
+    }
+
+    .status-blocked {
+        background-color: #dc3545;
+        color: white;
+    }
+</style>
 @endpush
 @endsection
 
