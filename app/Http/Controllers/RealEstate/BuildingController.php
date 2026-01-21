@@ -12,8 +12,9 @@ class BuildingController extends \App\Http\Controllers\Controller
     {
         $buildings = Building::withCount(['units'])
             ->with(['units' => function($query) {
-                $query->select('building_id');
+                $query->select('building_id', 'unit_type', 'status');
             }])
+            ->with(['ewaBills', 'expenses'])
             ->paginate(10);
 
         return view('real-estate.buildings.index', compact('buildings'));
@@ -31,12 +32,14 @@ class BuildingController extends \App\Http\Controllers\Controller
             'address' => 'required|string|max:500',
             'property_type' => 'required|in:residential,commercial,mixed-use,warehouse,parking',
             'total_floors' => 'required|integer|min:1',
+            'units_per_floor' => 'nullable|integer|min:1',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'amenities' => 'nullable|array',
-            'status' => 'required|in:active,inactive'
+            'status' => 'required|in:active,inactive',
+            'auto_create_floors' => 'nullable|boolean'
         ]);
 
         // Handle image upload
@@ -46,6 +49,27 @@ class BuildingController extends \App\Http\Controllers\Controller
         }
 
         $building = Building::create($validated);
+
+        // Auto-create floors if requested
+        if ($request->has('auto_create_floors') && $request->auto_create_floors) {
+            $totalFloors = $validated['total_floors'];
+            $unitsPerFloor = $validated['units_per_floor'] ?? 4; // Default to 4 units per floor
+
+            \Illuminate\Support\Facades\DB::transaction(function () use ($building, $totalFloors, $unitsPerFloor) {
+                for ($i = 0; $i < $totalFloors; $i++) {
+                    \App\Models\Floor::create([
+                        'building_id' => $building->id,
+                        'floor_number' => $i,
+                        'total_units' => $unitsPerFloor,
+                        'description' => "Floor {$i}",
+                        'floor_plan' => []
+                    ]);
+                }
+            });
+
+            return redirect()->route('real-estate.buildings.show', $building)
+                ->with('success', "Building created successfully with {$totalFloors} floors!");
+        }
 
         return redirect()->route('real-estate.buildings.show', $building)
             ->with('success', 'Building created successfully!');
@@ -92,7 +116,7 @@ class BuildingController extends \App\Http\Controllers\Controller
             if ($building->image && Storage::disk('public')->exists($building->image)) {
                 Storage::disk('public')->delete($building->image);
             }
-            
+
             $imagePath = $request->file('image')->store('buildings', 'public');
             $validated['image'] = $imagePath;
         }

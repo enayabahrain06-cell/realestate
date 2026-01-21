@@ -30,7 +30,7 @@
                 <div class="col-md-4">
                     <div class="input-group">
                         <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-                        <input type="text" name="search" class="form-control" placeholder="Search buildings..." 
+                        <input type="text" name="search" class="form-control" placeholder="Search buildings..."
                                value="{{ request('search') }}">
                     </div>
                 </div>
@@ -65,85 +65,111 @@
         <div class="row g-4">
             @foreach($buildings as $building)
                 <div class="col-md-6 col-lg-4">
-                    <div class="card h-100 building-card">
-                        <div class="card-header bg-white p-0">
-                            @if($building->image)
-                                <img src="{{ Storage::url($building->image) }}" alt="{{ $building->name }}" 
-                                     class="w-100" style="height: 160px; object-fit: cover;">
-                            @else
-                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 160px;">
-                                    <i class="bi bi-building fs-1 text-muted"></i>
-                                </div>
-                            @endif
-                        </div>
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h5 class="card-title mb-0 fw-bold">{{ $building->name }}</h5>
-                                <span class="badge status-{{ $building->status }}">
+                    <a href="{{ route('real-estate.buildings.show', $building) }}" class="text-decoration-none">
+                        <div class="card building-card h-100 border-2 shadow-sm">
+                            <!-- Building Image - Top -->
+                            <div class="position-relative">
+                                @if($building->image)
+                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px; overflow: hidden; border-radius: 0.375rem 0.375rem 0 0;">
+                                        <img src="{{ Storage::url($building->image) }}" alt="{{ $building->name }}"
+                                             class="img-fluid" style="max-height: 100%; max-width: 100%; object-fit: contain; padding: 10px;">
+                                    </div>
+                                @else
+                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px; border-radius: 0.375rem 0.375rem 0 0;">
+                                        <i class="bi bi-building fs-1 text-muted"></i>
+                                    </div>
+                                @endif
+
+                                <!-- Status Badge -->
+                                <span class="badge status-{{ $building->status }} position-absolute top-0 end-0 m-3">
                                     {{ ucfirst($building->status) }}
                                 </span>
                             </div>
-                            
-                            <p class="card-text text-muted small mb-3">
-                                <i class="bi bi-geo-alt me-1"></i> {{ $building->address }}
-                            </p>
 
-                            <div class="row text-center mb-3">
-                                <div class="col-4">
-                                    <div class="fw-bold text-primary">{{ $building->total_floors }}</div>
-                                    <small class="text-muted">Floors</small>
-                                </div>
-                                <div class="col-4">
-                                    <div class="fw-bold text-success">{{ $building->total_units }}</div>
-                                    <small class="text-muted">Units</small>
-                                </div>
-                                <div class="col-4">
-                                    <div class="fw-bold text-info">{{ $building->available_units }}</div>
-                                    <small class="text-muted">Available</small>
-                                </div>
-                            </div>
+                            <!-- Building Data - Bottom -->
+                            <div class="card-body">
+                                <h5 class="card-title mb-2 fw-bold text-dark">{{ $building->name }}</h5>
 
-                            @php
-                                $occupancyRate = $building->total_units > 0 
-                                    ? ($building->rented_units / $building->total_units) * 100 
-                                    : 0;
-                            @endphp
-                            <div class="mb-2">
-                                <div class="d-flex justify-content-between small mb-1">
-                                    <span>Occupancy</span>
-                                    <span class="fw-semibold">{{ round($occupancyRate) }}%</span>
+                                <p class="card-text text-muted small mb-3">
+                                    <i class="bi bi-geo-alt me-1"></i> {{ Str::limit($building->address, 50) }}
+                                </p>
+
+                                @php
+                                    $totalFlats = $building->units->where('unit_type', 'flat')->count();
+                                    $occupiedFlats = $building->units->where('unit_type', 'flat')->where('status', 'rented')->count();
+                                    $subsidiaryUnits = $building->units->where('unit_type', 'flat')->count(); // Assuming flats are subsidiary
+                                    $nonSubsidiaryUnits = $building->units->whereNotIn('unit_type', ['flat'])->count();
+
+                                    // Calculate expenses by category
+                                    $ewaExpenses = $building->ewaBills->sum('amount');
+                                    $maintenanceExpenses = $building->expenses->where('category', 'maintenance')->sum('amount');
+                                    $municipalityExpenses = $building->expenses->where('category', 'municipality')->sum('amount');
+                                @endphp
+
+                                <!-- Primary Stats -->
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <div class="stat-box p-2 rounded text-center">
+                                            <div class="d-flex align-items-center justify-content-center mb-1">
+                                                <i class="bi bi-house-door text-primary me-1"></i>
+                                                <small class="text-muted fw-semibold">Flats</small>
+                                            </div>
+                                            <div class="fw-bold text-dark">{{ $occupiedFlats }}/{{ $totalFlats }}</div>
+                                            <small class="text-muted" style="font-size: 0.65rem;">Occupied</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="stat-box p-2 rounded text-center">
+                                            <div class="d-flex align-items-center justify-content-center mb-1">
+                                                <i class="bi bi-building text-success me-1"></i>
+                                                <small class="text-muted fw-semibold">Units</small>
+                                            </div>
+                                            <div class="fw-bold text-dark">{{ $subsidiaryUnits }}/{{ $nonSubsidiaryUnits }}</div>
+                                            <small class="text-muted" style="font-size: 0.65rem;">Sub/Non-Sub</small>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar bg-success" role="progressbar" 
-                                         style="width: {{ $occupancyRate }}%"></div>
+
+                                <!-- Expense Stats -->
+                                <div class="expense-section mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-cash-stack text-warning me-2"></i>
+                                        <small class="text-muted fw-semibold">Monthly Expenses</small>
+                                    </div>
+
+                                    <div class="expense-item d-flex justify-content-between align-items-center mb-2 p-2 rounded">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-lightning-charge text-info me-2"></i>
+                                            <small class="text-dark">EWA</small>
+                                        </div>
+                                        <span class="badge bg-info">{{ number_format($ewaExpenses, 0) }} BD</span>
+                                    </div>
+
+                                    <div class="expense-item d-flex justify-content-between align-items-center mb-2 p-2 rounded">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-building-gear text-success me-2"></i>
+                                            <small class="text-dark">Municipality</small>
+                                        </div>
+                                        <span class="badge bg-success">{{ number_format($municipalityExpenses, 0) }} BD</span>
+                                    </div>
+
+                                    <div class="expense-item d-flex justify-content-between align-items-center p-2 rounded">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-tools text-warning me-2"></i>
+                                            <small class="text-dark">Maintenance</small>
+                                        </div>
+                                        <span class="badge bg-warning">{{ number_format($maintenanceExpenses, 0) }} BD</span>
+                                    </div>
+                                </div>
+
+                                <div class="text-center pt-2 border-top">
+                                    <small class="text-muted text-capitalize">
+                                        <i class="bi bi-tag me-1"></i>{{ $building->property_type }}
+                                    </small>
                                 </div>
                             </div>
-                            <small class="text-muted text-capitalize">
-                                <i class="bi bi-building me-1"></i>{{ $building->property_type }}
-                            </small>
                         </div>
-                        <div class="card-footer bg-white">
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('real-estate.buildings.show', $building) }}" 
-                                   class="btn btn-outline-primary btn-sm flex-grow-1">
-                                    <i class="bi bi-eye me-1"></i> View
-                                </a>
-                                <a href="{{ route('real-estate.buildings.edit', $building) }}" 
-                                   class="btn btn-outline-secondary btn-sm">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <form action="{{ route('real-estate.buildings.destroy', $building) }}" method="POST" 
-                                      class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-outline-danger btn-sm"
-                                            onclick="return confirm('Are you sure you want to delete this building?')">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
+                    </a>
                 </div>
             @endforeach
         </div>
@@ -166,5 +192,70 @@
         </div>
     @endif
 </div>
+
+@push('styles')
+<style>
+    .building-card {
+        transition: all 0.3s ease;
+        border: 2px solid #e0e0e0 !important;
+        cursor: pointer;
+    }
+
+    .building-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+        border-color: #007bff !important;
+    }
+
+    .building-card:hover .card-title {
+        color: #007bff !important;
+    }
+
+    /* Stat boxes */
+    .stat-box {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 1px solid #dee2e6;
+        transition: all 0.3s ease;
+    }
+
+    .building-card:hover .stat-box {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-color: #90caf9;
+        transform: scale(1.05);
+    }
+
+    /* Expense items */
+    .expense-section {
+        background: #f8f9fa;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
+    .expense-item {
+        background: white;
+        border: 1px solid #e9ecef;
+        transition: all 0.2s ease;
+    }
+
+    .expense-item:hover {
+        background: #f0f7ff;
+        border-color: #90caf9;
+        transform: translateX(3px);
+    }
+
+    .expense-item .badge {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        font-weight: 600;
+    }
+
+    /* Icons animation */
+    .building-card:hover i {
+        transform: scale(1.1);
+        transition: transform 0.3s ease;
+    }
+</style>
+@endpush
 @endsection
 

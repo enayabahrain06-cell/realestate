@@ -3,7 +3,8 @@
 @section('title', 'Floor ' . $floor->floor_number)
 
 @section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('real-estate.floors.index') }}">Floors</a></li>
+    <li class="breadcrumb-item"><a href="{{ route('real-estate.buildings.index') }}">Buildings</a></li>
+    <li class="breadcrumb-item"><a href="{{ route('real-estate.buildings.show', $floor->building) }}">{{ $floor->building->name }}</a></li>
     <li class="breadcrumb-item active">Floor {{ $floor->floor_number }}</li>
 @endsection
 
@@ -24,8 +25,8 @@
                 <a href="{{ route('real-estate.floors.edit', $floor) }}" class="btn btn-outline-primary">
                     <i class="bi bi-pencil me-1"></i> Edit
                 </a>
-                <a href="{{ route('real-estate.floors.index') }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-1"></i> Back
+                <a href="{{ route('real-estate.buildings.show', $floor->building) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Building
                 </a>
             </div>
         </div>
@@ -155,7 +156,7 @@
                 <div class="card-body">
                     <h5>{{ $floor->building->name }}</h5>
                     <p class="text-muted small mb-3">{{ $floor->building->address }}</p>
-                    
+
                     <div class="mb-2">
                         <strong>Property Type:</strong>
                         <span class="text-capitalize">{{ $floor->building->property_type }}</span>
@@ -191,8 +192,8 @@
                         <a href="{{ route('real-estate.units.create', ['building_id' => $floor->building_id, 'floor_id' => $floor->id]) }}" class="btn btn-outline-success">
                             <i class="bi bi-plus-circle me-1"></i> Add Unit
                         </a>
-                        <a href="{{ route('real-estate.floors.index', ['building_id' => $floor->building_id]) }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-layers me-1"></i> All Floors
+                        <a href="{{ route('real-estate.buildings.show', $floor->building) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-building me-1"></i> View Building
                         </a>
                     </div>
                 </div>

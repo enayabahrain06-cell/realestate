@@ -3,7 +3,8 @@
 @section('title', 'Edit Floor ' . $floor->floor_number)
 
 @section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('real-estate.floors.index') }}">Floors</a></li>
+    <li class="breadcrumb-item"><a href="{{ route('real-estate.buildings.index') }}">Buildings</a></li>
+    <li class="breadcrumb-item"><a href="{{ route('real-estate.buildings.show', $floor->building) }}">{{ $floor->building->name }}</a></li>
     <li class="breadcrumb-item"><a href="{{ route('real-estate.floors.show', $floor) }}">Floor {{ $floor->floor_number }}</a></li>
     <li class="breadcrumb-item active">Edit</li>
 @endsection
@@ -35,15 +36,15 @@
                     <form action="{{ route('real-estate.floors.update', $floor) }}" method="POST">
                         @csrf
                         @method('PUT')
-                        
+
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="building_id" class="form-label fw-semibold">Building *</label>
-                                <select class="form-select @error('building_id') is-invalid @endeo" 
+                                <select class="form-select @error('building_id') is-invalid @endeo"
                                         id="building_id" name="building_id" required>
                                     <option value="">Select Building</option>
                                     @foreach($buildings as $building)
-                                        <option value="{{ $building->id }}" 
+                                        <option value="{{ $building->id }}"
                                                 {{ $building->id == $floor->building_id ? 'selected' : '' }}>
                                             {{ $building->name }}
                                         </option>
@@ -53,13 +54,13 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <label for="floor_number" class="form-label fw-semibold">Floor Number *</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-hash"></i></span>
-                                    <input type="number" class="form-control @error('floor_number') is-invalid @endeo" 
-                                           id="floor_number" name="floor_number" value="{{ old('floor_number', $floor->floor_number) }}" 
+                                    <input type="number" class="form-control @error('floor_number') is-invalid @endeo"
+                                           id="floor_number" name="floor_number" value="{{ old('floor_number', $floor->floor_number) }}"
                                            min="0" required placeholder="e.g., 1">
                                 </div>
                                 @error('floor_number')
@@ -71,8 +72,8 @@
                                 <label for="total_units" class="form-label fw-semibold">Total Units *</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-door-open"></i></span>
-                                    <input type="number" class="form-control @error('total_units') is-invalid @endeo" 
-                                           id="total_units" name="total_units" value="{{ old('total_units', $floor->total_units) }}" 
+                                    <input type="number" class="form-control @error('total_units') is-invalid @endeo"
+                                           id="total_units" name="total_units" value="{{ old('total_units', $floor->total_units) }}"
                                            min="1" required placeholder="e.g., 4">
                                 </div>
                                 @error('total_units')
@@ -82,8 +83,8 @@
 
                             <div class="col-12">
                                 <label for="description" class="form-label fw-semibold">Description</label>
-                                <textarea class="form-control @error('description') is-invalid @endeo" 
-                                          id="description" name="description" rows="3" 
+                                <textarea class="form-control @error('description') is-invalid @endeo"
+                                          id="description" name="description" rows="3"
                                           placeholder="Describe this floor">{{ old('description', $floor->description) }}</textarea>
                                 @error('description')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -99,7 +100,7 @@
                                     @foreach($unitTypes as $type)
                                         <div class="col-6 col-md-4 col-lg-3">
                                             <div class="form-check">
-                                                <input class="form-check-input floor-plan-check" type="checkbox" 
+                                                <input class="form-check-input floor-plan-check" type="checkbox"
                                                        name="floor_plan[]" value="{{ $type }}"
                                                        id="floor_plan_{{ $type }}"
                                                        {{ in_array($type, old('floor_plan', $currentFloorPlan)) ? 'checked' : '' }}>
@@ -161,8 +162,8 @@
                         <a href="{{ route('real-estate.floors.show', $floor) }}" class="btn btn-outline-primary">
                             <i class="bi bi-eye me-1"></i> View Floor
                         </a>
-                        <a href="{{ route('real-estate.floors.index') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-list me-1"></i> All Floors
+                        <a href="{{ route('real-estate.buildings.show', $floor->building) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-building me-1"></i> View Building
                         </a>
                     </div>
                 </div>

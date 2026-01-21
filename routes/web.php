@@ -35,10 +35,10 @@ Route::get('/test-dashboard', function () {
         'birthdate' => \Carbon\Carbon::now()->subYears(35)->subMonths(3),
         'created_at' => \Carbon\Carbon::now(),
     ];
-    
+
     $dependents = collect([]);
     $familyInvoices = collect([]);
-    
+
     return view('family.dashboard', compact('user', 'dependents', 'familyInvoices'));
 });
 
@@ -73,7 +73,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/family/{id}', [App\Http\Controllers\RealEstate\FamilyController::class, 'update'])->name('family.update');
     Route::delete('/family/{id}', [App\Http\Controllers\RealEstate\FamilyController::class, 'destroy'])->name('family.destroy');
     Route::get('/profile/show', [App\Http\Controllers\RealEstate\FamilyController::class, 'profile'])->name('profile.show');
-    
+
     // Invoice Routes (using RealEstate\InvoiceController)
     Route::get('/invoices', [App\Http\Controllers\RealEstate\InvoiceController::class, 'index'])->name('invoices.index');
     Route::get('/invoices/{id}', [App\Http\Controllers\RealEstate\InvoiceController::class, 'show'])->name('invoices.show');
@@ -86,14 +86,16 @@ Route::prefix('real-estate')->name('real-estate.')->middleware(['auth', 'verifie
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/available-units', [DashboardController::class, 'availableUnits'])->name('available-units');
-    
+
     // Buildings
     Route::resource('buildings', BuildingController::class);
-    
-    // Floors
-    Route::resource('floors', FloorController::class);
+
+    // Floors (managed within buildings - no separate index)
+    Route::resource('floors', FloorController::class)->except(['index']);
+    Route::get('/buildings/{building}/floors/bulk-create', [FloorController::class, 'bulkCreate'])->name('floors.bulk-create');
+    Route::post('/buildings/{building}/floors/bulk-store', [FloorController::class, 'bulkStore'])->name('floors.bulk-store');
     Route::post('/floors/{floor}/bulk-units', [FloorController::class, 'bulkCreateUnits'])->name('floors.bulk-units');
-    
+
     // Units
     Route::resource('units', UnitController::class);
     Route::get('/buildings/{building}/floor/{floorNumber}', [UnitController::class, 'floorPlan'])->name('units.floor-plan');
@@ -102,15 +104,15 @@ Route::prefix('real-estate')->name('real-estate.')->middleware(['auth', 'verifie
     Route::post('/units/bulk-create', [UnitController::class, 'bulkCreate'])->name('units.bulk-create');
     Route::post('/units/bulk-status', [UnitController::class, 'bulkStatusUpdate'])->name('units.bulk-status');
     Route::post('/units/bulk-rent', [UnitController::class, 'bulkRentIncrease'])->name('units.bulk-rent');
-    
+
     // Tenants
     Route::resource('tenants', TenantController::class);
-    
+
     // Leases
     Route::resource('leases', LeaseController::class);
     Route::post('/leases/{lease}/terminate', [LeaseController::class, 'terminate'])->name('leases.terminate');
     Route::post('/leases/bulk-rent', [LeaseController::class, 'bulkRent'])->name('leases.bulk-rent');
-    
+
     // Bookings
     Route::resource('bookings', BookingController::class);
     Route::post('/bookings/{booking}/confirm', [BookingController::class, 'confirm'])->name('bookings.confirm');

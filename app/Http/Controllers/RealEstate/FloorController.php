@@ -121,6 +121,67 @@ class FloorController extends \App\Http\Controllers\Controller
     }
 
     /**
+     * Show bulk floor creation form
+     */
+    public function bulkCreate(Building $building)
+    {
+        return view('real-estate.floors.bulk-create', compact('building'));
+    }
+
+    /**
+     * Store bulk created floors
+     */
+    public function bulkStore(Request $request, Building $building)
+    {
+        $validated = $request->validate([
+            'start_floor' => 'required|integer|min:0',
+            'end_floor' => 'required|integer|gte:start_floor',
+            'units_per_floor' => 'required|integer|min:1',
+            'description' => 'nullable|string',
+            'floor_plan' => 'nullable|array'
+        ]);
+
+        $floorsCreated = 0;
+        $errors = [];
+
+        DB::transaction(function () use ($request, $building, &$floorsCreated, &$errors) {
+            for ($i = $request->start_floor; $i <= $request->end_floor; $i++) {
+                // Check if floor already exists
+                $exists = Floor::where('building_id', $building->id)
+                    ->where('floor_number', $i)
+                    ->exists();
+
+                if ($exists) {
+                    $errors[] = "Floor {$i} already exists";
+                    continue;
+                }
+
+                Floor::create([
+                    'building_id' => $building->id,
+                    'floor_number' => $i,
+                    'total_units' => $request->units_per_floor,
+                    'description' => $request->description,
+                    'floor_plan' => $request->floor_plan ?? []
+                ]);
+
+                $floorsCreated++;
+            }
+        });
+
+        if ($floorsCreated > 0) {
+            $message = "Successfully created {$floorsCreated} floor(s)!";
+            if (count($errors) > 0) {
+                $message .= " Skipped: " . implode(', ', $errors);
+            }
+            return redirect()->route('real-estate.buildings.show', $building)
+                ->with('success', $message);
+        } else {
+            return back()->withErrors(['error' => 'No floors were created. ' . implode(', ', $errors)])
+                ->withInput();
+        }
+    }
+
+    /**
      * Bulk create units for a floor
      */
     public function bulkCreateUnits(Request $request, Floor $floor)

@@ -3,8 +3,14 @@
 @section('title', 'Add New Floor')
 
 @section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('real-estate.floors.index') }}">Floors</a></li>
-    <li class="breadcrumb-item active">Create</li>
+    <li class="breadcrumb-item"><a href="{{ route('real-estate.buildings.index') }}">Buildings</a></li>
+    @if($buildingId)
+        @php $building = \App\Models\Building::find($buildingId); @endphp
+        @if($building)
+            <li class="breadcrumb-item"><a href="{{ route('real-estate.buildings.show', $building) }}">{{ $building->name }}</a></li>
+        @endif
+    @endif
+    <li class="breadcrumb-item active">Create Floor</li>
 @endsection
 
 @section('content')
@@ -17,9 +23,18 @@
                 <p class="text-muted small mb-0">Create a new floor in a building</p>
             </div>
             <div class="col-auto">
-                <a href="{{ route('real-estate.floors.index') }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-1"></i> Back to Floors
-                </a>
+                @if($buildingId)
+                    @php $building = \App\Models\Building::find($buildingId); @endphp
+                    @if($building)
+                        <a href="{{ route('real-estate.buildings.show', $building) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Back to Building
+                        </a>
+                    @endif
+                @else
+                    <a href="{{ route('real-estate.buildings.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Buildings
+                    </a>
+                @endif
             </div>
         </div>
     </div>
@@ -33,31 +48,42 @@
                 <div class="card-body">
                     <form action="{{ route('real-estate.floors.store') }}" method="POST">
                         @csrf
-                        
+
                         <div class="row g-3">
-                            <div class="col-md-6">
-                                <label for="building_id" class="form-label fw-semibold">Building *</label>
-                                <select class="form-select @error('building_id') is-invalid @enderror" 
-                                        id="building_id" name="building_id" required>
-                                    <option value="">Select Building</option>
-                                    @foreach($buildings as $building)
-                                        <option value="{{ $building->id }}" 
-                                                {{ old('building_id', $buildingId) == $building->id ? 'selected' : '' }}>
-                                            {{ $building->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('building_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            
-                            <div class="col-md-6">
+                            @if($buildingId)
+                                @php $selectedBuilding = \App\Models\Building::find($buildingId); @endphp
+                                <div class="col-12">
+                                    <div class="alert alert-info mb-3">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        Creating floor for: <strong>{{ $selectedBuilding->name }}</strong>
+                                    </div>
+                                    <input type="hidden" name="building_id" value="{{ $buildingId }}">
+                                </div>
+                            @else
+                                <div class="col-md-6">
+                                    <label for="building_id" class="form-label fw-semibold">Building *</label>
+                                    <select class="form-select @error('building_id') is-invalid @enderror"
+                                            id="building_id" name="building_id" required>
+                                        <option value="">Select Building</option>
+                                        @foreach($buildings as $building)
+                                            <option value="{{ $building->id }}"
+                                                    {{ old('building_id') == $building->id ? 'selected' : '' }}>
+                                                {{ $building->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('building_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            @endif
+
+                            <div class="col-md-{{ $buildingId ? '6' : '6' }}">
                                 <label for="floor_number" class="form-label fw-semibold">Floor Number *</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-hash"></i></span>
-                                    <input type="number" class="form-control @error('floor_number') is-invalid @enderror" 
-                                           id="floor_number" name="floor_number" value="{{ old('floor_number', 1) }}" 
+                                    <input type="number" class="form-control @error('floor_number') is-invalid @enderror"
+                                           id="floor_number" name="floor_number" value="{{ old('floor_number', 1) }}"
                                            min="0" required placeholder="e.g., 1">
                                 </div>
                                 @error('floor_number')
@@ -70,8 +96,8 @@
                                 <label for="total_units" class="form-label fw-semibold">Total Units *</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-door-open"></i></span>
-                                    <input type="number" class="form-control @error('total_units') is-invalid @enderror" 
-                                           id="total_units" name="total_units" value="{{ old('total_units', 1) }}" 
+                                    <input type="number" class="form-control @error('total_units') is-invalid @enderror"
+                                           id="total_units" name="total_units" value="{{ old('total_units', 1) }}"
                                            min="1" required placeholder="e.g., 4">
                                 </div>
                                 @error('total_units')
@@ -81,8 +107,8 @@
 
                             <div class="col-12">
                                 <label for="description" class="form-label fw-semibold">Description</label>
-                                <textarea class="form-control @error('description') is-invalid @enderror" 
-                                          id="description" name="description" rows="3" 
+                                <textarea class="form-control @error('description') is-invalid @enderror"
+                                          id="description" name="description" rows="3"
                                           placeholder="Describe this floor, its purpose, features, etc.">{{ old('description') }}</textarea>
                                 @error('description')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -97,7 +123,7 @@
                                     @foreach($unitTypes as $type)
                                         <div class="col-6 col-md-4 col-lg-3">
                                             <div class="form-check">
-                                                <input class="form-check-input floor-plan-check" type="checkbox" 
+                                                <input class="form-check-input floor-plan-check" type="checkbox"
                                                        name="floor_plan[]" value="{{ $type }}"
                                                        id="floor_plan_{{ $type }}"
                                                        {{ is_array(old('floor_plan')) && in_array($type, old('floor_plan')) ? 'checked' : '' }}>
@@ -118,9 +144,18 @@
                             <button type="submit" class="btn btn-primary me-2">
                                 <i class="bi bi-check-circle me-1"></i> Create Floor
                             </button>
-                            <a href="{{ route('real-estate.floors.index') }}" class="btn btn-outline-secondary">
-                                Cancel
-                            </a>
+                            @if($buildingId)
+                                @php $building = \App\Models\Building::find($buildingId); @endphp
+                                @if($building)
+                                    <a href="{{ route('real-estate.buildings.show', $building) }}" class="btn btn-outline-secondary">
+                                        Cancel
+                                    </a>
+                                @endif
+                            @else
+                                <a href="{{ route('real-estate.buildings.index') }}" class="btn btn-outline-secondary">
+                                    Cancel
+                                </a>
+                            @endif
                         </div>
                     </form>
                 </div>
@@ -149,8 +184,8 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{{ route('real-estate.floors.index') }}" class="btn btn-outline-primary">
-                            <i class="bi bi-list me-1"></i> View All Floors
+                        <a href="{{ route('real-estate.buildings.index') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-building me-1"></i> View All Buildings
                         </a>
                         <a href="{{ route('real-estate.buildings.index') }}" class="btn btn-outline-primary">
                             <i class="bi bi-building me-1"></i> Manage Buildings
